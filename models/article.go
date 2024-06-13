@@ -18,13 +18,5 @@ type Article struct {
 	UpdatedAt      time.Time          `bson:"updatedAt" json:"updatedAt"`
 	Favorited      bool               `bson:"favorited" json:"favorited"`
 	FavoritesCount int                `bson:"favoritesCount" json:"favoritesCount"`
-	Author         Author             `bson:"author" json:"author"`
-}
-
-// Author represents the author of an article
-type Author struct {
-	Username  string `bson:"username" json:"username"`
-	Bio       string `bson:"bio" json:"bio"`
-	Image     string `bson:"image" json:"image"`
-	Following bool   `bson:"following" json:"following"`
+	Author         User               `bson:"author" json:"author"`
 }

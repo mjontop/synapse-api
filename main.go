@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mjontop/synapse-api/db"
+	"github.com/mjontop/synapse-api/routes"
 )
 
 func main() {
@@ -14,6 +15,9 @@ func main() {
 	db.ConnectDB()
 
 	router := gin.Default()
+	api := router.Group("/api")
+
+	routes.SetupUserRoutes(api)
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
