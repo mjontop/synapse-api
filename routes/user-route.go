@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -9,25 +11,25 @@ func SetupUserRoutes(router *gin.RouterGroup) {
 	userRoutes := router.Group("/users")
 	{
 		userRoutes.POST("/", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusCreated, gin.H{
 				"message": "Register User route",
 			})
 		})
 
 		userRoutes.POST("/login", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusOK, gin.H{
 				"message": "Login User route",
 			})
 		})
 
 		userRoutes.GET("/current", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusOK, gin.H{
 				"message": "Get Current User route",
 			})
 		})
 
 		userRoutes.PUT("/update", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusOK, gin.H{
 				"message": "Update User route",
 			})
 		})
@@ -36,19 +38,19 @@ func SetupUserRoutes(router *gin.RouterGroup) {
 	profileRoutes := router.Group("/profiles/:username")
 	{
 		profileRoutes.GET("/", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusOK, gin.H{
 				"message": "Get User Profile route",
 			})
 		})
 
 		profileRoutes.POST("/follow", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusCreated, gin.H{
 				"message": "Follow User route",
 			})
 		})
 
 		profileRoutes.DELETE("/unfollow", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusCreated, gin.H{
 				"message": "Unfollow User route",
 			})
 		})
