@@ -12,8 +12,8 @@ import (
 	"github.com/mjontop/synapse-api/repositories"
 )
 
-func CreateUser(c *gin.Context) {
-	var userRequest requests.UserRequestType
+func Register(c *gin.Context) {
+	var userRequest requests.UserRegisterRequestType
 	var user models.User
 
 	ctx := context.Background()
@@ -51,7 +51,50 @@ func CreateUser(c *gin.Context) {
 	user.Password = ""
 
 	c.JSON(http.StatusOK, gin.H{"message": "User created successfully", "user": user})
+}
 
+func Login(c *gin.Context) {
+	var loginUser requests.UserLoginRequestType
+	var user models.User
+
+	ctx := context.Background()
+
+	if err := c.ShouldBindJSON(&loginUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	useRepo := repositories.NewUserRepo()
+
+	if loginUser.User.Email != "" {
+		existingUser, err := useRepo.GetUserByEmail(ctx, loginUser.User.Email)
+		if err != nil || existingUser.Email == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Email"})
+			return
+		}
+		user = existingUser
+
+	} else if loginUser.User.Username != "" {
+		existingUser, err := useRepo.GetUserByUserName(ctx, loginUser.User.Username)
+		if err != nil || existingUser.Username == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Username"})
+			return
+		}
+		user = existingUser
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username or Email is Required"})
+		return
+	}
+
+	isValidPassword := encrypt.CheckPassword(loginUser.User.Password, user.Password)
+
+	if !isValidPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Credentials"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Login Success"})
 }
 
 func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, user models.User, c *gin.Context) (error, bool) {

@@ -10,13 +10,9 @@ import (
 func SetupUserRoutes(router *gin.RouterGroup) {
 	userRoutes := router.Group("/users")
 	{
-		userRoutes.POST("/", services.CreateUser)
+		userRoutes.POST("/", services.Register)
 
-		userRoutes.POST("/login", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Login User route",
-			})
-		})
+		userRoutes.POST("/login", services.Login)
 
 		userRoutes.GET("/current", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
