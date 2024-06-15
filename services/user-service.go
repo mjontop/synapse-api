@@ -6,19 +6,23 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mjontop/synapse-api/lib/requests"
 	"github.com/mjontop/synapse-api/models"
 	"github.com/mjontop/synapse-api/repositories"
 )
 
 func CreateUser(c *gin.Context) {
+	var userRequest requests.UserRequestType
 	var user models.User
 
 	ctx := context.Background()
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&userRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	user = userRequest.User
 
 	userRepo := repositories.NewUserRepo()
 
