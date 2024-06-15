@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,11 @@ func CreateUser(c *gin.Context) {
 
 	userRepo := repositories.NewUserRepo()
 
+	_, isExistingUser := checkIsNewUser(ctx, userRepo, user, c)
+	if isExistingUser {
+		return
+	}
+
 	err := userRepo.CreateUser(ctx, user)
 
 	if err != nil {
@@ -30,27 +36,33 @@ func CreateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User created successfully", "user": user})
 
-	// userRepo := db.GetCollection("users")
+}
 
-	// var existingUser models.User
+func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, user models.User, c *gin.Context) (error, bool) {
+	existingUserWithEmail, err := userRepo.GetUserByEmail(ctx, user.Email)
 
-	// err := userRepo.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return nil, true
+	}
 
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-	// 	return
-	// }
+	if existingUserWithEmail.Email == user.Email {
+		error := fmt.Sprintf("User with email \"%s\" is already taken", user.Email)
+		c.JSON(http.StatusBadRequest, gin.H{"error": error})
+		return nil, true
+	}
 
-	// if existingUser.Email == user.Email {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("User with email \"%s\" is already registered", user.Email)})
-	// 	return
-	// }
+	existingUserWithUsername, err := userRepo.GetUserByUserName(ctx, user.Username)
 
-	// _, err = userRepo.InsertOne(ctx, user)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-	// 	return
-	// }
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return nil, true
+	}
 
-	// c.JSON(http.StatusOK, gin.H{"message": "User created successfully", "user": user})
+	if existingUserWithUsername.Username == user.Username {
+		error := fmt.Sprintf("User with username \"%s\" is already taken", user.Username)
+		c.JSON(http.StatusBadRequest, gin.H{"error": error})
+		return nil, true
+	}
+	return err, false
 }

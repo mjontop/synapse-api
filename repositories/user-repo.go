@@ -13,6 +13,8 @@ import (
 
 type UserRepository interface {
 	CreateUser(ctx context.Context, user models.User) error
+	GetUserByEmail(ctx context.Context, email string) (models.User, error)
+	GetUserByUserName(ctx context.Context, username string) (models.User, error)
 }
 
 type userRepository struct {
@@ -25,7 +27,7 @@ func NewUserRepo() UserRepository {
 	}
 }
 
-func (repo *userRepository) getUserByEmail(ctx context.Context, email string) (models.User, error) {
+func (repo *userRepository) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	var user models.User
 	err := repo.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
@@ -37,7 +39,7 @@ func (repo *userRepository) getUserByEmail(ctx context.Context, email string) (m
 	return user, nil
 }
 
-func (repo *userRepository) getUserByUserName(ctx context.Context, username string) (models.User, error) {
+func (repo *userRepository) GetUserByUserName(ctx context.Context, username string) (models.User, error) {
 	var user models.User
 	err := repo.collection.FindOne(ctx, bson.M{"username": username}).Decode(&user)
 	if err != nil {
@@ -50,7 +52,7 @@ func (repo *userRepository) getUserByUserName(ctx context.Context, username stri
 }
 
 func (repo *userRepository) CheckIfUserExists(ctx context.Context, user models.User) (bool, error) {
-	emailUser, err := repo.getUserByEmail(ctx, user.Email)
+	emailUser, err := repo.GetUserByEmail(ctx, user.Email)
 	if err != nil && err != mongo.ErrNoDocuments {
 		return false, err
 	}
@@ -58,7 +60,7 @@ func (repo *userRepository) CheckIfUserExists(ctx context.Context, user models.U
 		return true, nil // Email Existed
 	}
 
-	usernameUser, err := repo.getUserByUserName(ctx, user.Username)
+	usernameUser, err := repo.GetUserByUserName(ctx, user.Username)
 	if err != nil && err != mongo.ErrNoDocuments {
 		return false, err
 	}
