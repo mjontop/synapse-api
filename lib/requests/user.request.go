@@ -3,7 +3,7 @@ package requests
 import "github.com/mjontop/synapse-api/models"
 
 type UserRegisterRequestType struct {
-	User models.User
+	User models.User `json:"user"`
 }
 
 type loginUser struct {
@@ -13,5 +13,5 @@ type loginUser struct {
 }
 
 type UserLoginRequestType struct {
-	User loginUser
+	User loginUser `json:"user"`
 }

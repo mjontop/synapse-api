@@ -19,7 +19,7 @@ func main() {
 
 	routes.SetupUserRoutes(api)
 
-	router.GET("/", func(c *gin.Context) {
+	router.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Hello, Gin!",
 		})

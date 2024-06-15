@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/mjontop/synapse-api/encrypt"
 	"github.com/mjontop/synapse-api/lib/requests"
+	"github.com/mjontop/synapse-api/lib/responses"
 	"github.com/mjontop/synapse-api/models"
 	"github.com/mjontop/synapse-api/repositories"
 )
@@ -90,11 +94,20 @@ func Login(c *gin.Context) {
 	isValidPassword := encrypt.CheckPassword(loginUser.User.Password, user.Password)
 
 	if !isValidPassword {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Credentials"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login Success"})
+	token, err := generateToken(user.Username)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error "})
+		return
+	}
+
+	newLoginuser := responses.NewLoginUserResponse(user.Email, token, user.Username, user.Bio, user.Image)
+
+	c.JSON(http.StatusOK, newLoginuser)
 }
 
 func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, user models.User, c *gin.Context) (error, bool) {
@@ -124,4 +137,32 @@ func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, u
 		return nil, true
 	}
 	return err, false
+}
+
+type Claims struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
+
+func generateToken(username string) (string, error) {
+	jwtKey := []byte(os.Getenv("JWT_SUPER_SECRET"))
+
+	expirationTime := time.Now().Add(24 * time.Hour)
+
+	claims := &Claims{
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+
 }
