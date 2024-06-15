@@ -12,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var Client *mongo.Client
+
 func connectToDB() (*mongo.Database, error) {
 
 	mongoURI := os.Getenv("MONGODB_URI")
@@ -21,7 +23,7 @@ func connectToDB() (*mongo.Database, error) {
 	}
 
 	if datebaseName == "" {
-		return nil, fmt.Errorf("Database name is invalid")
+		return nil, fmt.Errorf("error: Database name is invalid")
 	}
 
 	clientOptions := options.Client().ApplyURI(mongoURI)
@@ -42,6 +44,8 @@ func connectToDB() (*mongo.Database, error) {
 
 	db := client.Database(datebaseName)
 
+	Client = client
+
 	return db, nil
 
 }
@@ -52,9 +56,12 @@ func ConnectDB() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	db, err := connectToDB()
+	_, err := connectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Client().Disconnect(context.Background())
+}
+
+func GetCollection(collectionName string) *mongo.Collection {
+	return Client.Database("synapse").Collection(collectionName)
 }

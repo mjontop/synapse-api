@@ -4,17 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mjontop/synapse-api/controllers"
 )
 
 // SetupUserRoutes sets up routes related to users
 func SetupUserRoutes(router *gin.RouterGroup) {
 	userRoutes := router.Group("/users")
 	{
-		userRoutes.POST("/", func(c *gin.Context) {
-			c.JSON(http.StatusCreated, gin.H{
-				"message": "Register User route",
-			})
-		})
+		userRoutes.POST("/", controllers.CreateUser)
 
 		userRoutes.POST("/login", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
