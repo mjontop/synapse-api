@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mjontop/synapse-api/encrypt"
 	"github.com/mjontop/synapse-api/lib/requests"
 	"github.com/mjontop/synapse-api/models"
 	"github.com/mjontop/synapse-api/repositories"
@@ -31,12 +32,23 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	err := userRepo.CreateUser(ctx, user)
+	hashedPassword, err := encrypt.HashPassword(user.Password)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	user.Password = hashedPassword
+
+	err = userRepo.CreateUser(ctx, user)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	user.Password = ""
 
 	c.JSON(http.StatusOK, gin.H{"message": "User created successfully", "user": user})
 
