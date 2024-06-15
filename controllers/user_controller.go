@@ -24,8 +24,6 @@ func CreateUser(c *gin.Context) {
 	user.ID = primitive.NewObjectID()
 
 	collection := db.GetCollection("users")
-	// ctx, cancel := context.WithTimeout(context.Background(), 100000000*time.Second)
-	// defer cancel()
 
 	_, err := collection.InsertOne(context.Background(), user)
 	if err != nil {
