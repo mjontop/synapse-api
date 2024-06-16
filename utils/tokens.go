@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -32,5 +33,26 @@ func GenerateToken(username string) (string, error) {
 	}
 
 	return tokenString, nil
+}
 
+func DecodeToken(tokenString string) (map[string]string, error) {
+	jwtKey := []byte(os.Getenv("JWT_SUPER_SECRET"))
+
+	claims := &Claims{}
+
+	// Parse the token with the claims
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil {
+		return nil, errors.New("invalid token")
+	}
+
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	// Return the username inside the token
+	return map[string]string{"username": claims.Username}, nil
 }

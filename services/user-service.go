@@ -107,6 +107,20 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, newLoginuser)
 }
 
+func RefreshCurrentLoggedUser(c *gin.Context) {
+	currentUser := c.MustGet("user").(models.User)
+	token, err := utils.GenerateToken(currentUser.Username)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error "})
+		return
+	}
+
+	currentUserResponse := responses.NewLoginUserResponse(currentUser.Email, token, currentUser.Username, currentUser.Bio, currentUser.Image)
+
+	c.JSON(http.StatusOK, currentUserResponse)
+}
+
 func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, user models.User, c *gin.Context) (error, bool) {
 	existingUserWithEmail, err := userRepo.GetUserByEmail(ctx, user.Email)
 
