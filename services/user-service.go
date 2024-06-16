@@ -102,7 +102,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	newLoginuser := responses.NewLoginUserResponse(user.Email, token, user.Username, user.Bio, user.Image)
+	newLoginuser := responses.NewLoggedInUserResponse(user.Email, token, user.Username, user.Bio, user.Image)
 
 	c.JSON(http.StatusOK, newLoginuser)
 }
@@ -116,7 +116,7 @@ func RefreshCurrentLoggedUser(c *gin.Context) {
 		return
 	}
 
-	currentUserResponse := responses.NewLoginUserResponse(currentUser.Email, token, currentUser.Username, currentUser.Bio, currentUser.Image)
+	currentUserResponse := responses.NewLoggedInUserResponse(currentUser.Email, token, currentUser.Username, currentUser.Bio, currentUser.Image)
 
 	c.JSON(http.StatusOK, currentUserResponse)
 }

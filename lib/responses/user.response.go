@@ -8,11 +8,11 @@ type user struct {
 	Image    string `json:"image"`
 }
 
-type LoginUserResponse struct {
+type LoggedInUserResponse struct {
 	User user `json:"user"`
 }
 
-func NewLoginUserResponse(email, token, username, bio, image string) LoginUserResponse {
+func NewLoggedInUserResponse(email, token, username, bio, image string) LoggedInUserResponse {
 	user := user{
 		Email:    email,
 		Token:    token,
@@ -20,16 +20,5 @@ func NewLoginUserResponse(email, token, username, bio, image string) LoginUserRe
 		Bio:      bio,
 		Image:    image,
 	}
-	return LoginUserResponse{User: user}
-}
-
-func CurrentUserResponse(email, token, username, bio, image string) LoginUserResponse {
-	user := user{
-		Email:    email,
-		Token:    token,
-		Username: username,
-		Bio:      bio,
-		Image:    image,
-	}
-	return LoginUserResponse{User: user}
+	return LoggedInUserResponse{User: user}
 }
