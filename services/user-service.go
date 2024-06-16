@@ -4,16 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/mjontop/synapse-api/encrypt"
 	"github.com/mjontop/synapse-api/lib/requests"
 	"github.com/mjontop/synapse-api/lib/responses"
 	"github.com/mjontop/synapse-api/models"
 	"github.com/mjontop/synapse-api/repositories"
+	"github.com/mjontop/synapse-api/utils"
 )
 
 func Register(c *gin.Context) {
@@ -36,7 +33,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := encrypt.HashPassword(user.Password)
+	hashedPassword, err := utils.HashPassword(user.Password)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
@@ -91,14 +88,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	isValidPassword := encrypt.CheckPassword(loginUser.User.Password, user.Password)
+	isValidPassword := utils.CheckPassword(loginUser.User.Password, user.Password)
 
 	if !isValidPassword {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Credentials"})
 		return
 	}
 
-	token, err := generateToken(user.Username)
+	token, err := utils.GenerateToken(user.Username)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error "})
@@ -137,32 +134,4 @@ func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, u
 		return nil, true
 	}
 	return err, false
-}
-
-type Claims struct {
-	Username string `json:"username"`
-	jwt.RegisteredClaims
-}
-
-func generateToken(username string) (string, error) {
-	jwtKey := []byte(os.Getenv("JWT_SUPER_SECRET"))
-
-	expirationTime := time.Now().Add(24 * time.Hour)
-
-	claims := &Claims{
-		Username: username,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString(jwtKey)
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
-
 }
