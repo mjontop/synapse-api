@@ -9,20 +9,18 @@ import (
 )
 
 func SetupUserRoutes(router *gin.RouterGroup) {
-
-	router.GET("/user", middleware.AuthMiddleware(), services.RefreshCurrentLoggedUser)
-
-	userRoutes := router.Group("/users")
+	userRoutes := router.Group("/user")
 	{
-		userRoutes.POST("/", services.Register)
+		userRoutes.GET("/", middleware.AuthMiddleware(), services.RefreshCurrentLoggedUser)
+		userRoutes.PATCH("/", middleware.AuthMiddleware(), services.UpdateUser)
 
-		userRoutes.POST("/login", services.Login)
+	}
 
-		userRoutes.PUT("/update", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Update User route",
-			})
-		})
+	usersRoutes := router.Group("/users")
+	{
+		usersRoutes.POST("/", services.Register)
+
+		usersRoutes.POST("/login", services.Login)
 	}
 
 	profileRoutes := router.Group("/profiles/:username")

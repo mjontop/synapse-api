@@ -121,6 +121,52 @@ func RefreshCurrentLoggedUser(c *gin.Context) {
 	c.JSON(http.StatusOK, currentUserResponse)
 }
 
+func UpdateUser(c *gin.Context) {
+	var updateBody map[string]map[string]interface{}
+
+	currentUser := c.MustGet("user").(models.User)
+
+	if err := c.BindJSON(&updateBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updateUserFields, ok := updateBody["user"]
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	if name, ok := updateUserFields["name"]; ok {
+		currentUser.FullName = name.(string)
+	}
+	if bio, ok := updateUserFields["bio"]; ok {
+		currentUser.Bio = bio.(string)
+	}
+	if image, ok := updateUserFields["image"]; ok {
+		currentUser.Image = image.(string)
+	}
+
+	userRepo := repositories.NewUserRepo()
+	err := userRepo.UpdateUserById(currentUser)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	token, err := utils.GenerateToken(currentUser.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	currentUserResponse := responses.NewLoggedInUserResponse(currentUser.Email, token, currentUser.Username, currentUser.Bio, currentUser.Image)
+
+	c.JSON(http.StatusOK, currentUserResponse)
+
+}
+
 func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, user models.User, c *gin.Context) (error, bool) {
 	existingUserWithEmail, err := userRepo.GetUserByEmail(ctx, user.Email)
 

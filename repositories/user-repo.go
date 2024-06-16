@@ -15,6 +15,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user models.User) error
 	GetUserByEmail(ctx context.Context, email string) (models.User, error)
 	GetUserByUserName(ctx context.Context, username string) (models.User, error)
+	UpdateUserById(user models.User) error
 }
 
 type userRepository struct {
@@ -87,4 +88,18 @@ func (repo *userRepository) CreateUser(ctx context.Context, user models.User) er
 
 	_, err = repo.collection.InsertOne(ctx, user)
 	return err
+}
+
+func (repo *userRepository) UpdateUserById(user models.User) error {
+
+	ctx := context.Background()
+
+	userExists, err := repo.CheckIfUserExists(ctx, user)
+
+	if err != nil || !userExists {
+		return err
+	}
+
+	repo.collection.UpdateByID(ctx, user.ID, user)
+	return nil
 }
