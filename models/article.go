@@ -15,8 +15,8 @@ type Article struct {
 	Body                string             `bson:"body" json:"body"`
 	TagList             []string           `bson:"tagList" json:"tagList"`
 	AuthorID            primitive.ObjectID `bson:"author" json:"author"` // Reference the User ID
-	PostCreationTimeUtc time.Time          `bson:"createdAt" json:"createdAt"`
-	LastUpdatedAtUtc    time.Time          `bson:"updatedAt" json:"updatedAt"`
+	PostCreationTimeUtc time.Time          `bson:"createdAtUtc" json:"createdAt"`
+	LastUpdatedAtUtc    time.Time          `bson:"updatedAtUtc" json:"updatedAt"`
 	IsDeleted           bool               `bson:"isDeleted" json:"-"`
 
 	// For internal purpose only

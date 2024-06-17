@@ -18,6 +18,7 @@ func main() {
 	api := router.Group("/api")
 
 	routes.SetupUserRoutes(api)
+	routes.SetupArticleRoutes(api)
 
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
