@@ -102,7 +102,15 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	newLoginuser := responses.NewLoggedInUserResponse(user.Email, token, user.Username, user.Bio, user.Image)
+	userDto := responses.UserDto{
+		Email:    user.Email,
+		Token:    token,
+		Username: user.Username,
+		Bio:      user.Bio,
+		Image:    user.Image,
+	}
+
+	newLoginuser := responses.NewLoggedInUserResponse(userDto)
 
 	c.JSON(http.StatusOK, newLoginuser)
 }
@@ -116,7 +124,15 @@ func RefreshCurrentLoggedUser(c *gin.Context) {
 		return
 	}
 
-	currentUserResponse := responses.NewLoggedInUserResponse(currentUser.Email, token, currentUser.Username, currentUser.Bio, currentUser.Image)
+	userDto := responses.UserDto{
+		Email:    currentUser.Email,
+		Token:    token,
+		Username: currentUser.Username,
+		Bio:      currentUser.Bio,
+		Image:    currentUser.Image,
+	}
+
+	currentUserResponse := responses.NewLoggedInUserResponse(userDto)
 
 	c.JSON(http.StatusOK, currentUserResponse)
 }
@@ -161,9 +177,17 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	currentUserResponse := responses.NewLoggedInUserResponse(currentUser.Email, token, currentUser.Username, currentUser.Bio, currentUser.Image)
+	userDto := responses.UserDto{
+		Email:    currentUser.Email,
+		Token:    token,
+		Username: currentUser.Username,
+		Bio:      currentUser.Bio,
+		Image:    currentUser.Image,
+	}
 
-	c.JSON(http.StatusOK, currentUserResponse)
+	newLoginuser := responses.NewLoggedInUserResponse(userDto)
+
+	c.JSON(http.StatusOK, newLoginuser)
 
 }
 

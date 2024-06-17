@@ -100,6 +100,18 @@ func (repo *userRepository) UpdateUserById(user models.User) error {
 		return err
 	}
 
-	repo.collection.UpdateByID(ctx, user.ID, user)
+	dataToBeUpdated := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "bio", Value: user.Bio},
+			{Key: "image", Value: user.Image},
+			{Key: "fullname", Value: user.FullName},
+		}},
+	}
+
+	_, err = repo.collection.UpdateByID(ctx, user.ID, dataToBeUpdated)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

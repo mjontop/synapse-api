@@ -25,11 +25,7 @@ func SetupUserRoutes(router *gin.RouterGroup) {
 
 	profileRoutes := router.Group("/profiles/:username")
 	{
-		profileRoutes.GET("/", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Get User Profile route",
-			})
-		})
+		profileRoutes.GET("/", services.GetProfileHandler)
 
 		profileRoutes.POST("/follow", func(c *gin.Context) {
 			c.JSON(http.StatusCreated, gin.H{
