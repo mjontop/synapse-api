@@ -16,6 +16,7 @@ type UserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (models.User, error)
 	GetUserByUserName(ctx context.Context, username string) (models.User, error)
 	UpdateUserById(user models.User) error
+	GetUserById(ctx context.Context, id primitive.ObjectID) (models.User, error)
 }
 
 type userRepository struct {
@@ -31,6 +32,18 @@ func NewUserRepo() UserRepository {
 func (repo *userRepository) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	var user models.User
 	err := repo.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return user, nil
+		}
+		return user, err
+	}
+	return user, nil
+}
+
+func (repo *userRepository) GetUserById(ctx context.Context, id primitive.ObjectID) (models.User, error) {
+	var user models.User
+	err := repo.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return user, nil

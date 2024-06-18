@@ -10,3 +10,5 @@ type ArticleDto struct {
 type CreateArticleRequestDto struct {
 	Article ArticleDto `json:"article"`
 }
+
+type GetArticleDto = CreateArticleRequestDto

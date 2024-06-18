@@ -51,7 +51,7 @@ func HandleCreateArticle(c *gin.Context) {
 		Description: articleDto.Article.Description,
 		Body:        articleDto.Article.Body,
 		TagList:     articleDto.Article.TagList,
-		Author: responses.UserDto{
+		User: responses.UserDto{
 			Email:    user.Email,
 			Username: user.Username,
 			Bio:      user.Bio,
@@ -60,4 +60,24 @@ func HandleCreateArticle(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"article": articleResponse})
+}
+
+func HandleGetArticleBySlug(c *gin.Context) {
+	articleRepo := repositories.NewArticleRepo()
+
+	slug := c.Param("slug")
+
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Article not found"})
+	}
+
+	ctx := context.Background()
+	article, err := articleRepo.GetArticleBySlug(ctx, slug)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"article": article})
+
 }

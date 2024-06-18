@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/mjontop/synapse-api/db"
+	"github.com/mjontop/synapse-api/lib/responses"
 	"github.com/mjontop/synapse-api/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,7 +15,7 @@ import (
 type ArticleRepository interface {
 	CreateArticle(ctx context.Context, article models.Article) error
 	// GetArticles(ctx context.Context, filter bson.D, page int, pageSize int) ([]models.Article, error)
-	GetArticleByID(ctx context.Context, articleID primitive.ObjectID) (models.Article, error)
+	GetArticleBySlug(ctx context.Context, slug string) (responses.ArticleResponseType, error)
 	UpdateArticleByID(ctx context.Context, articleID primitive.ObjectID, update bson.D) error
 	DeleteArticleByID(ctx context.Context, articleID primitive.ObjectID) error
 }
@@ -61,17 +62,56 @@ func (repo *articleRepository) CreateArticle(ctx context.Context, article models
 // 	return articles, nil
 // }
 
-func (repo *articleRepository) GetArticleByID(ctx context.Context, articleID primitive.ObjectID) (models.Article, error) {
+// func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string) (models.Article, error) {
+// 	var article models.Article
+// 	filter := bson.D{{Key: "slug", Value: slug}, {Key: "isDeleted", Value: false}} // Filter for non-deleted articles by slug
+// 	err := repo.collection.FindOne(ctx, filter).Decode(&article)
+// 	if err != nil {
+// 		if err == mongo.ErrNoDocuments {
+// 			return article, errors.New("article not found")
+// 		}
+// 		return article, err
+// 	}
+
+// 	// Populate user information (optional)
+// 	// Implement logic to retrieve user data based on article.AuthorID (assuming Article has AuthorID)
+// 	// You might need to call another repository to fetch user details
+
+// 	return article, nil
+// }
+
+func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string) (responses.ArticleResponseType, error) {
+
+	var articleResponse responses.ArticleResponseType
 	var article models.Article
-	filter := bson.D{{Key: "_id", Value: articleID}, {Key: "isDeleted", Value: false}} // Filter for non-deleted articles
+
+	filter := bson.D{{Key: "slug", Value: slug}, {Key: "isDeleted", Value: false}} // Filter for non-deleted articles by slug
 	err := repo.collection.FindOne(ctx, filter).Decode(&article)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return article, errors.New("article not found")
+			return articleResponse, errors.New("article not found")
 		}
-		return article, err
+		return articleResponse, err
 	}
-	return article, nil
+
+	userRepo := NewUserRepo() // Assuming you have a function to create a new user repository
+	user, err := userRepo.GetUserById(ctx, article.AuthorID)
+	if err != nil {
+		return articleResponse, errors.New("failed to retrieve author information")
+	}
+
+	articleResponse.Title = article.Title
+	articleResponse.Body = article.Body
+	articleResponse.Description = article.Description
+	articleResponse.Slug = article.Slug
+	articleResponse.TagList = article.TagList
+
+	articleResponse.User.Email = user.Email
+	articleResponse.User.Bio = user.Bio
+	articleResponse.User.Username = user.Username
+	articleResponse.User.Image = user.Image
+
+	return articleResponse, nil
 }
 
 func (repo *articleRepository) UpdateArticleByID(ctx context.Context, articleID primitive.ObjectID, update bson.D) error {

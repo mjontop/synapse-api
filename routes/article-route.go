@@ -10,7 +10,7 @@ func SetupArticleRoutes(router *gin.RouterGroup) {
 	articleRoutes := router.Group("/article")
 	{
 		articleRoutes.POST("/", middleware.AuthMiddleware(), services.HandleCreateArticle)
-		articleRoutes.PATCH("/", middleware.AuthMiddleware(), services.UpdateUser)
+		articleRoutes.GET("/:slug", services.HandleGetArticleBySlug)
 
 	}
 }
