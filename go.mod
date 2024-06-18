@@ -1,6 +1,6 @@
 module github.com/mjontop/synapse-api
 
-go 1.22
+go 1.22.4
 
 require (
 	github.com/bytedance/sonic v1.11.8 // indirect
