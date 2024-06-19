@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mjontop/synapse-api/db"
@@ -22,7 +23,7 @@ func main() {
 
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Hello, Gin!",
+			"message": time.Now(),
 		})
 	})
 

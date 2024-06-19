@@ -3,10 +3,13 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/mjontop/synapse-api/db"
 	"github.com/mjontop/synapse-api/lib/responses"
 	"github.com/mjontop/synapse-api/models"
+	"github.com/mjontop/synapse-api/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -36,86 +39,67 @@ func (repo *articleRepository) CreateArticle(ctx context.Context, article models
 	return err
 }
 
-// func (repo *articleRepository) GetArticles(ctx context.Context, filter bson.D, page int, pageSize int) ([]models.Article, error) {
-// 	skip := (page - 1) * pageSize
-// 	sort := bson.D{{Key: "createdAt", Value: -1}} // Sort by creation date descending
-// 	pipeline := bson.A{
-// 		{Key: "$match", Value: filter},
-// 		{Key: "$sort", Value: sort},
-// 		{Key: "$skip", Value: skip},
-// 		{Key: "$limit", Value: pageSize},
-// 	}
-// 	cursor, err := repo.collection.Aggregate(ctx, pipeline)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer cursor.Close(ctx)
-
-// 	var articles []models.Article
-// 	for cursor.Next(ctx) {
-// 		var article models.Article
-// 		if err := cursor.Decode(&article); err != nil {
-// 			return nil, err
-// 		}
-// 		articles = append(articles, article)
-// 	}
-// 	return articles, nil
-// }
-
-// func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string) (models.Article, error) {
-// 	var article models.Article
-// 	filter := bson.D{{Key: "slug", Value: slug}, {Key: "isDeleted", Value: false}} // Filter for non-deleted articles by slug
-// 	err := repo.collection.FindOne(ctx, filter).Decode(&article)
-// 	if err != nil {
-// 		if err == mongo.ErrNoDocuments {
-// 			return article, errors.New("article not found")
-// 		}
-// 		return article, err
-// 	}
-
-// 	// Populate user information (optional)
-// 	// Implement logic to retrieve user data based on article.AuthorID (assuming Article has AuthorID)
-// 	// You might need to call another repository to fetch user details
-
-// 	return article, nil
-// }
-
 func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string) (responses.ArticleResponseType, error) {
-
+	var article map[string]interface{}
 	var articleResponse responses.ArticleResponseType
-	var article models.Article
 
-	filter := bson.D{{Key: "slug", Value: slug}, {Key: "isDeleted", Value: false}} // Filter for non-deleted articles by slug
-	err := repo.collection.FindOne(ctx, filter).Decode(&article)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return articleResponse, errors.New("article not found")
-		}
-		return articleResponse, err
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.D{{Key: "slug", Value: slug}, {Key: "isDeleted", Value: false}}}},
+		{{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: "users"},
+			{Key: "localField", Value: "author"},
+			{Key: "foreignField", Value: "_id"},
+			{Key: "as", Value: "author"},
+		}}},
+		{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$author"}}}},
+		{{Key: "$project", Value: bson.D{
+			{Key: "title", Value: 1},
+			{Key: "id", Value: 1},
+			{Key: "slug", Value: 1},
+			{Key: "content", Value: 1},
+			{Key: "description", Value: 1},
+			{Key: "body", Value: 1},
+			{Key: "tagList", Value: 1},
+			{Key: "createdAt", Value: 1},
+			{Key: "updatedAt", Value: 1},
+			{Key: "author.username", Value: 1},
+			{Key: "author.bio", Value: 1},
+			{Key: "author.image", Value: 1},
+			{Key: "author.fullname", Value: 1},
+			{Key: "author.email", Value: 1},
+		}}},
 	}
 
-	userRepo := NewUserRepo() // Assuming you have a function to create a new user repository
-	user, err := userRepo.GetUserById(ctx, article.AuthorID)
+	cursor, err := repo.collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return articleResponse, errors.New("failed to retrieve author information")
+		return articleResponse, fmt.Errorf("failed to execute aggregation: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	var results []bson.M
+	if err = cursor.All(ctx, &results); err != nil {
+		return articleResponse, fmt.Errorf("failed to decode results: %v", err)
 	}
 
-	articleResponse.Title = article.Title
-	articleResponse.Body = article.Body
-	articleResponse.Description = article.Description
-	articleResponse.Slug = article.Slug
-	articleResponse.TagList = article.TagList
+	if len(results) == 0 {
+		return articleResponse, errors.New("no article found with the given slug")
+	}
 
-	articleResponse.User.Email = user.Email
-	articleResponse.User.Bio = user.Bio
-	articleResponse.User.Username = user.Username
-	articleResponse.User.Image = user.Image
+	err = mapstructure.Decode(results[0], &article)
+	if err != nil {
+		return articleResponse, errors.New("no article found with the given slug")
 
+	}
+
+	articleResponse, err = convertToArticleResponse(article)
+	if err != nil {
+		return articleResponse, errors.New("no article found with the given slug")
+	}
 	return articleResponse, nil
 }
 
 func (repo *articleRepository) UpdateArticleByID(ctx context.Context, articleID primitive.ObjectID, update bson.D) error {
-	update = bson.D{{Key: "$set", Value: update}} // Wrap update data in $set
+	update = bson.D{{Key: "$set", Value: update}}
 	result, err := repo.collection.UpdateByID(ctx, articleID, update)
 	if err != nil {
 		return err
@@ -127,10 +111,46 @@ func (repo *articleRepository) UpdateArticleByID(ctx context.Context, articleID 
 }
 
 func (repo *articleRepository) DeleteArticleByID(ctx context.Context, articleID primitive.ObjectID) error {
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "isDeleted", Value: true}}}} // Set isDeleted to true for soft delete
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "isDeleted", Value: true}}}} // Setting isDeleted to true for soft delete
 	_, err := repo.collection.UpdateByID(ctx, articleID, update)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func convertToArticleResponse(data map[string]interface{}) (responses.ArticleResponseType, error) {
+	tagList := []string{}
+	v := data["tagList"].(primitive.A)
+	for _, tag := range v {
+		tagList = append(tagList, tag.(string))
+	}
+
+	authorMap := data["author"].(primitive.M)
+
+	createdAt, err := utils.ParseTime(data["createdAt"])
+	if err != nil {
+		return responses.ArticleResponseType{}, err
+	}
+
+	updatedAt, err := utils.ParseTime(data["updatedAt"])
+	if err != nil {
+		return responses.ArticleResponseType{}, err
+	}
+
+	return responses.ArticleResponseType{
+		Title:               data["title"].(string),
+		Slug:                data["slug"].(string),
+		Description:         data["description"].(string),
+		Body:                data["body"].(string),
+		TagList:             tagList,
+		PostCreationTimeUtc: createdAt,
+		LastUpdatedAtUtc:    updatedAt,
+		User: responses.UserDto{
+			Email:    authorMap["email"].(string),
+			Username: authorMap["username"].(string),
+			Bio:      authorMap["bio"].(string),
+			Image:    authorMap["image"].(string),
+		},
+	}, nil
 }
