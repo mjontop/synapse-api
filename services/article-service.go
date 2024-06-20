@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mjontop/synapse-api/lib/requests"
@@ -26,12 +27,16 @@ func HandleCreateArticle(c *gin.Context) {
 	slug := utils.GenerateSlug(articleDto.Article.Title)
 
 	article := models.Article{
-		Title:       articleDto.Article.Title,
-		Slug:        slug,
-		Description: articleDto.Article.Description,
-		Body:        articleDto.Article.Body,
-		TagList:     articleDto.Article.TagList,
-		AuthorID:    user.ID,
+		Title:               articleDto.Article.Title,
+		Slug:                slug,
+		Description:         articleDto.Article.Description,
+		Body:                articleDto.Article.Body,
+		TagList:             articleDto.Article.TagList,
+		CreatedAtUtc:        time.Now().UTC(),
+		LastUpdatedAtUtc:    time.Now().UTC(),
+		PostCreationTimeUtc: time.Now().UTC(),
+		UpdatedAtUtc:        time.Now().UTC(),
+		AuthorID:            user.ID,
 	}
 
 	// Validate article data (optional)
@@ -46,11 +51,13 @@ func HandleCreateArticle(c *gin.Context) {
 	}
 
 	articleResponse := responses.ArticleResponseType{
-		Title:       articleDto.Article.Title,
-		Slug:        slug,
-		Description: articleDto.Article.Description,
-		Body:        articleDto.Article.Body,
-		TagList:     articleDto.Article.TagList,
+		Title:               articleDto.Article.Title,
+		Slug:                slug,
+		Description:         articleDto.Article.Description,
+		Body:                articleDto.Article.Body,
+		TagList:             articleDto.Article.TagList,
+		PostCreationTimeUtc: article.PostCreationTimeUtc,
+		LastUpdatedAtUtc:    article.LastUpdatedAtUtc,
 		User: responses.UserDto{
 			Email:    user.Email,
 			Username: user.Username,
