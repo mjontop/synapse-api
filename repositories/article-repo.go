@@ -17,7 +17,7 @@ import (
 
 type ArticleRepository interface {
 	CreateArticle(ctx context.Context, article models.Article) error
-	// GetArticles(ctx context.Context, filter bson.D, page int, pageSize int) ([]models.Article, error)
+	GetPaginatedArticles(ctx context.Context) ([]responses.ArticleResponseType, error)
 	GetArticleBySlug(ctx context.Context, slug string) (responses.ArticleResponseType, error)
 	UpdateArticleByID(ctx context.Context, articleID primitive.ObjectID, update bson.D) error
 	DeleteArticleByID(ctx context.Context, articleID primitive.ObjectID) error
@@ -37,6 +37,47 @@ func (repo *articleRepository) CreateArticle(ctx context.Context, article models
 	article.ID = primitive.NewObjectID()
 	_, err := repo.collection.InsertOne(ctx, article)
 	return err
+}
+
+func (repo *articleRepository) GetPaginatedArticles(ctx context.Context) ([]responses.ArticleResponseType, error) {
+	var articlesResponse []responses.ArticleResponseType
+	var articles []map[string]interface{}
+
+	pipeline := createArticlePipeline(bson.D{}) // You can pass additional filters if needed
+
+	cursor, err := repo.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return articlesResponse, fmt.Errorf("failed to execute aggregation: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	var results []bson.M
+	if err = cursor.All(ctx, &results); err != nil {
+		return articlesResponse, fmt.Errorf("failed to decode results: %v", err)
+	}
+
+	err = mapstructure.Decode(results, &articles)
+	if err != nil {
+		return articlesResponse, utils.ErrArticleNotFound
+	}
+
+	if len(results) == 0 {
+		return articlesResponse, utils.ErrArticleNotFound
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	for _, article := range articles {
+		articleResponse, err := convertToArticleResponse(article)
+		if err != nil {
+			return articlesResponse, utils.ErrArticleNotFound
+		}
+		articlesResponse = append(articlesResponse, articleResponse)
+	}
+
+	return articlesResponse, nil
 }
 
 func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string) (responses.ArticleResponseType, error) {
@@ -65,7 +106,6 @@ func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string
 	err = mapstructure.Decode(results[0], &article)
 	if err != nil {
 		return articleResponse, utils.ErrArticleNotFound
-
 	}
 
 	articleResponse, err = convertToArticleResponse(article)

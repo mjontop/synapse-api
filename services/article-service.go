@@ -97,3 +97,17 @@ func HandleGetArticleBySlug(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"article": article})
 }
+
+func HandleGetPaginatedArticles(c *gin.Context) {
+	articleRepo := repositories.NewArticleRepo()
+	ctx := context.Background()
+	article, err := articleRepo.GetPaginatedArticles(ctx)
+
+	if err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"articles": article})
+}
