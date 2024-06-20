@@ -43,32 +43,9 @@ func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string
 	var article map[string]interface{}
 	var articleResponse responses.ArticleResponseType
 
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.D{{Key: "slug", Value: slug}, {Key: "isDeleted", Value: false}}}},
-		{{Key: "$lookup", Value: bson.D{
-			{Key: "from", Value: "users"},
-			{Key: "localField", Value: "author"},
-			{Key: "foreignField", Value: "_id"},
-			{Key: "as", Value: "author"},
-		}}},
-		{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$author"}}}},
-		{{Key: "$project", Value: bson.D{
-			{Key: "title", Value: 1},
-			{Key: "id", Value: 1},
-			{Key: "slug", Value: 1},
-			{Key: "content", Value: 1},
-			{Key: "description", Value: 1},
-			{Key: "body", Value: 1},
-			{Key: "tagList", Value: 1},
-			{Key: "createdAt", Value: 1},
-			{Key: "updatedAt", Value: 1},
-			{Key: "author.username", Value: 1},
-			{Key: "author.bio", Value: 1},
-			{Key: "author.image", Value: 1},
-			{Key: "author.fullname", Value: 1},
-			{Key: "author.email", Value: 1},
-		}}},
-	}
+	slugFilter := bson.D{{Key: "slug", Value: slug}}
+
+	pipeline := createArticlePipeline(slugFilter)
 
 	cursor, err := repo.collection.Aggregate(ctx, pipeline)
 	if err != nil {
@@ -82,18 +59,18 @@ func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string
 	}
 
 	if len(results) == 0 {
-		return articleResponse, errors.New("no article found with the given slug")
+		return articleResponse, utils.ErrArticleNotFound
 	}
 
 	err = mapstructure.Decode(results[0], &article)
 	if err != nil {
-		return articleResponse, errors.New("no article found with the given slug")
+		return articleResponse, utils.ErrArticleNotFound
 
 	}
 
 	articleResponse, err = convertToArticleResponse(article)
 	if err != nil {
-		return articleResponse, errors.New("no article found with the given slug")
+		return articleResponse, utils.ErrArticleNotFound
 	}
 	return articleResponse, nil
 }
@@ -153,4 +130,39 @@ func convertToArticleResponse(data map[string]interface{}) (responses.ArticleRes
 			Image:    authorMap["image"].(string),
 		},
 	}, nil
+}
+
+func createArticlePipeline(filter bson.D) mongo.Pipeline {
+	baseFilter := bson.D{{Key: "isDeleted", Value: false}}
+
+	combinedFilter := append(filter, baseFilter...)
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: combinedFilter}},
+		{{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: "users"},
+			{Key: "localField", Value: "author"},
+			{Key: "foreignField", Value: "_id"},
+			{Key: "as", Value: "author"},
+		}}},
+		{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$author"}}}},
+		{{Key: "$project", Value: bson.D{
+			{Key: "title", Value: 1},
+			{Key: "id", Value: 1},
+			{Key: "slug", Value: 1},
+			{Key: "content", Value: 1},
+			{Key: "description", Value: 1},
+			{Key: "body", Value: 1},
+			{Key: "tagList", Value: 1},
+			{Key: "createdAt", Value: 1},
+			{Key: "updatedAt", Value: 1},
+			{Key: "author.username", Value: 1},
+			{Key: "author.bio", Value: 1},
+			{Key: "author.image", Value: 1},
+			{Key: "author.fullname", Value: 1},
+			{Key: "author.email", Value: 1},
+		}}},
+	}
+
+	return pipeline
 }

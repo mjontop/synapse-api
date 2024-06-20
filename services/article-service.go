@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -74,17 +76,24 @@ func HandleGetArticleBySlug(c *gin.Context) {
 
 	slug := c.Param("slug")
 
+	notFoundError := gin.H{"error": fmt.Sprintf("Article with slug \"%s\" does not exists", slug)}
+
 	if slug == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Article not found"})
+		c.JSON(http.StatusBadRequest, notFoundError)
 	}
 
 	ctx := context.Background()
 	article, err := articleRepo.GetArticleBySlug(ctx, slug)
 	if err != nil {
+
+		if errors.Is(err, utils.ErrArticleNotFound) {
+			c.JSON(http.StatusBadRequest, notFoundError)
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"article": article})
-
 }
