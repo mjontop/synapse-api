@@ -110,9 +110,9 @@ func Login(c *gin.Context) {
 		Image:    user.Image,
 	}
 
-	newLoginuser := responses.NewLoggedInUserResponse(userDto)
+	newLoggedInUser := responses.NewLoggedInUserResponse(userDto)
 
-	c.JSON(http.StatusOK, newLoginuser)
+	c.JSON(http.StatusOK, newLoggedInUser)
 }
 
 func RefreshCurrentLoggedUser(c *gin.Context) {
@@ -185,9 +185,9 @@ func UpdateUser(c *gin.Context) {
 		Image:    currentUser.Image,
 	}
 
-	newLoginuser := responses.NewLoggedInUserResponse(userDto)
+	newLoggedInUser := responses.NewLoggedInUserResponse(userDto)
 
-	c.JSON(http.StatusOK, newLoginuser)
+	c.JSON(http.StatusOK, newLoggedInUser)
 
 }
 
@@ -200,8 +200,8 @@ func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, u
 	}
 
 	if existingUserWithEmail.Email == user.Email {
-		error := fmt.Sprintf("User with email \"%s\" is already taken", user.Email)
-		c.JSON(http.StatusBadRequest, gin.H{"error": error})
+		err := fmt.Sprintf("User with email \"%s\" is already taken", user.Email)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return nil, true
 	}
 
@@ -213,8 +213,8 @@ func checkIsNewUser(ctx context.Context, userRepo repositories.UserRepository, u
 	}
 
 	if existingUserWithUsername.Username == user.Username {
-		error := fmt.Sprintf("User with username \"%s\" is already taken", user.Username)
-		c.JSON(http.StatusBadRequest, gin.H{"error": error})
+		err := fmt.Sprintf("User with username \"%s\" is already taken", user.Username)
+		c.JSON(http.StatusBadRequest, gin.H{"err": err})
 		return nil, true
 	}
 	return err, false
