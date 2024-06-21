@@ -19,6 +19,7 @@ type ArticleRepository interface {
 	CreateArticle(ctx context.Context, article models.Article) error
 	GetPaginatedArticles(ctx context.Context) ([]responses.ArticleResponseType, error)
 	GetArticleBySlug(ctx context.Context, slug string) (responses.ArticleResponseType, error)
+	GetUsersArticleBySlug(ctx context.Context, slug string, currentUserId primitive.ObjectID) (models.Article, error)
 	UpdateArticleByID(ctx context.Context, articleID primitive.ObjectID, update bson.D) error
 	DeleteArticleByID(ctx context.Context, articleID primitive.ObjectID) error
 }
@@ -128,12 +129,30 @@ func (repo *articleRepository) UpdateArticleByID(ctx context.Context, articleID 
 }
 
 func (repo *articleRepository) DeleteArticleByID(ctx context.Context, articleID primitive.ObjectID) error {
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "isDeleted", Value: true}}}} // Setting isDeleted to true for soft delete
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "isDeleted", Value: true}}}}
 	_, err := repo.collection.UpdateByID(ctx, articleID, update)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (repo *articleRepository) GetUsersArticleBySlug(ctx context.Context, slug string, currentUserId primitive.ObjectID) (models.Article, error) {
+	var article models.Article
+
+	slugFilter := bson.D{
+		{Key: "slug", Value: slug},
+		{Key: "author", Value: currentUserId},
+		{Key: "isDeleted", Value: false},
+	}
+
+	err := repo.collection.FindOne(ctx, slugFilter).Decode(&article)
+
+	if err != nil {
+		return article, utils.ErrArticleNotFound
+	}
+
+	return article, nil
 }
 
 func convertToArticleResponse(data map[string]interface{}) (responses.ArticleResponseType, error) {

@@ -1,1 +1,5 @@
 .env
+/.idea/modules.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/synapse-backend.iml
+/.idea/vcs.xml

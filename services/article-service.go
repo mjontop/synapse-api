@@ -41,10 +41,6 @@ func HandleCreateArticle(c *gin.Context) {
 		AuthorID:            user.ID,
 	}
 
-	// Validate article data (optional)
-	// You can add validation logic here using appropriate libraries
-	// and return an error response if validation fails.
-
 	ctx := context.Background()
 	err := articleRepo.CreateArticle(ctx, article)
 	if err != nil {
@@ -110,4 +106,38 @@ func HandleGetPaginatedArticles(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"articles": article})
+}
+
+func HandleDeleteArticleById(c *gin.Context) {
+	articleRepo := repositories.NewArticleRepo()
+	slug := c.Param("slug")
+	ctx := context.Background()
+
+	user := c.MustGet("user").(models.User)
+	badRequestError := gin.H{"error": "Either the article is does not exists or you don't have permission to delete"}
+
+	articles, err := articleRepo.GetUsersArticleBySlug(ctx, slug, user.ID)
+
+	if err != nil {
+		if errors.Is(err, utils.ErrArticleNotFound) {
+			c.JSON(http.StatusBadRequest, badRequestError)
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if articles.AuthorID != user.ID {
+		c.JSON(http.StatusForbidden, badRequestError)
+		return
+	}
+
+	err = articleRepo.DeleteArticleByID(ctx, articles.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{"message": "Article deleted successfully"})
+	return
 }
