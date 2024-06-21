@@ -43,7 +43,7 @@ func (repo *articleRepository) GetPaginatedArticles(ctx context.Context) ([]resp
 	var articlesResponse []responses.ArticleResponseType
 	var articles []map[string]interface{}
 
-	pipeline := createArticlePipeline(bson.D{}) // You can pass additional filters if needed
+	pipeline := createArticlePipeline(bson.D{})
 
 	cursor, err := repo.collection.Aggregate(ctx, pipeline)
 	if err != nil {
