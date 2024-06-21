@@ -156,7 +156,7 @@ func (repo *articleRepository) GetUsersArticleBySlug(ctx context.Context, slug s
 }
 
 func convertToArticleResponse(data map[string]interface{}) (responses.ArticleResponseType, error) {
-	tagList := []string{}
+	var tagList []string
 	v := data["tagList"].(primitive.A)
 	for _, tag := range v {
 		tagList = append(tagList, tag.(string))

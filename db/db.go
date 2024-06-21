@@ -17,12 +17,12 @@ var Client *mongo.Client
 func connectToDB() (*mongo.Database, error) {
 
 	mongoURI := os.Getenv("MONGODB_URI")
-	datebaseName := os.Getenv("DB_NAME")
+	databaseName := os.Getenv("DB_NAME")
 	if mongoURI == "" {
 		return nil, fmt.Errorf("MONGODB_URI environment variable is not set")
 	}
 
-	if datebaseName == "" {
+	if databaseName == "" {
 		return nil, fmt.Errorf("error: Database name is invalid")
 	}
 
@@ -42,7 +42,7 @@ func connectToDB() (*mongo.Database, error) {
 
 	fmt.Println("Connected to MongoDB!")
 
-	db := client.Database(datebaseName)
+	db := client.Database(databaseName)
 
 	Client = client
 
