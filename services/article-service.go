@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mjontop/synapse-api/lib/validations"
 	"net/http"
 	"time"
 
@@ -28,12 +29,14 @@ func HandleCreateArticle(c *gin.Context) {
 
 	slug := utils.GenerateSlug(articleDto.Article.Title)
 
+	validatedTagList := validations.ValidateTags(articleDto.Article.TagList)
+
 	article := models.Article{
 		Title:               articleDto.Article.Title,
 		Slug:                slug,
 		Description:         articleDto.Article.Description,
 		Body:                articleDto.Article.Body,
-		TagList:             articleDto.Article.TagList,
+		TagList:             validatedTagList,
 		CreatedAtUtc:        time.Now().UTC(),
 		LastUpdatedAtUtc:    time.Now().UTC(),
 		PostCreationTimeUtc: time.Now().UTC(),
