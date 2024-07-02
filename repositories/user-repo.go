@@ -33,7 +33,7 @@ func (repo *userRepository) GetUserByEmail(ctx context.Context, email string) (m
 	var user models.User
 	err := repo.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return user, nil
 		}
 		return user, err
@@ -45,7 +45,7 @@ func (repo *userRepository) GetUserById(ctx context.Context, id primitive.Object
 	var user models.User
 	err := repo.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return user, nil
 		}
 		return user, err
@@ -57,7 +57,7 @@ func (repo *userRepository) GetUserByUserName(ctx context.Context, username stri
 	var user models.User
 	err := repo.collection.FindOne(ctx, bson.M{"username": username}).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return user, nil
 		}
 		return user, err
@@ -67,7 +67,7 @@ func (repo *userRepository) GetUserByUserName(ctx context.Context, username stri
 
 func (repo *userRepository) CheckIfUserExists(ctx context.Context, user models.User) (bool, error) {
 	emailUser, err := repo.GetUserByEmail(ctx, user.Email)
-	if err != nil && err != mongo.ErrNoDocuments {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return false, err
 	}
 	if emailUser.Email == user.Email {
@@ -75,7 +75,7 @@ func (repo *userRepository) CheckIfUserExists(ctx context.Context, user models.U
 	}
 
 	usernameUser, err := repo.GetUserByUserName(ctx, user.Username)
-	if err != nil && err != mongo.ErrNoDocuments {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return false, err
 	}
 	if usernameUser.Username == user.Username {

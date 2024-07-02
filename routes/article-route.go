@@ -11,7 +11,8 @@ func SetupArticleRoutes(router *gin.RouterGroup) {
 	{
 		articleRoutes.POST("/", middleware.AuthMiddleware(), services.HandleCreateArticle)
 		articleRoutes.GET("/:slug", services.HandleGetArticleBySlug)
-		articleRoutes.DELETE("/:slug", middleware.AuthMiddleware(), services.HandleDeleteArticleById)
+		articleRoutes.DELETE("/:slug", middleware.AuthMiddleware(), services.HandleDeleteArticle)
+		articleRoutes.PATCH("/:slug", middleware.AuthMiddleware(), services.HandleUpdateArticle)
 	}
 
 	articlesRoutes := router.Group("/articles")

@@ -2,8 +2,9 @@ package repositories
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/mjontop/synapse-api/lib/requests"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/mjontop/synapse-api/db"
@@ -20,7 +21,7 @@ type ArticleRepository interface {
 	GetPaginatedArticles(ctx context.Context) ([]responses.ArticleResponseType, error)
 	GetArticleBySlug(ctx context.Context, slug string) (responses.ArticleResponseType, error)
 	GetUsersArticleBySlug(ctx context.Context, slug string, currentUserId primitive.ObjectID) (models.Article, error)
-	UpdateArticleByID(ctx context.Context, articleID primitive.ObjectID, update bson.D) error
+	UpdateArticleBySlug(ctx context.Context, slug string, articleToBeUpdate *requests.ArticleDto, userId primitive.ObjectID) error
 	DeleteArticleByID(ctx context.Context, articleID primitive.ObjectID) error
 }
 
@@ -116,18 +117,6 @@ func (repo *articleRepository) GetArticleBySlug(ctx context.Context, slug string
 	return articleResponse, nil
 }
 
-func (repo *articleRepository) UpdateArticleByID(ctx context.Context, articleID primitive.ObjectID, update bson.D) error {
-	update = bson.D{{Key: "$set", Value: update}}
-	result, err := repo.collection.UpdateByID(ctx, articleID, update)
-	if err != nil {
-		return err
-	}
-	if result.MatchedCount == 0 {
-		return errors.New("article not found")
-	}
-	return nil
-}
-
 func (repo *articleRepository) DeleteArticleByID(ctx context.Context, articleID primitive.ObjectID) error {
 	update := bson.D{{Key: "$set", Value: bson.D{{Key: "isDeleted", Value: true}}}}
 	_, err := repo.collection.UpdateByID(ctx, articleID, update)
@@ -155,8 +144,45 @@ func (repo *articleRepository) GetUsersArticleBySlug(ctx context.Context, slug s
 	return article, nil
 }
 
+func (repo *articleRepository) UpdateArticleBySlug(ctx context.Context, slug string, articleToBeUpdate *requests.ArticleDto, userId primitive.ObjectID) error {
+	_, err := repo.GetUsersArticleBySlug(ctx, slug, userId)
+	if err != nil {
+		return utils.ErrArticleNotFound
+	}
+
+	update := bson.M{}
+
+	if articleToBeUpdate.Title != "" {
+		update["title"] = articleToBeUpdate.Title
+	}
+
+	if articleToBeUpdate.Body != "" {
+		update["body"] = articleToBeUpdate.Body
+	}
+
+	if articleToBeUpdate.Description != "" {
+		update["description"] = articleToBeUpdate.Description
+	}
+
+	if cap(articleToBeUpdate.TagList) > 0 {
+		update["tagList"] = articleToBeUpdate.TagList
+	}
+
+	update["updatedAt"] = time.Now().UTC()
+
+	if len(update) == 0 {
+		return nil
+	}
+
+	filter := bson.D{{"slug", slug}}
+
+	_, err = repo.collection.UpdateOne(ctx, filter, bson.M{"$set": update})
+
+	return err
+}
+
 func convertToArticleResponse(data map[string]interface{}) (responses.ArticleResponseType, error) {
-	tagList := []string{}
+	var tagList []string
 	v := data["tagList"].(primitive.A)
 	for _, tag := range v {
 		tagList = append(tagList, tag.(string))
