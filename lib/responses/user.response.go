@@ -23,13 +23,13 @@ func NewLoggedInUserResponse(userDto UserDto) LoggedInUserResponse {
 	return LoggedInUserResponse{User: user}
 }
 
-type UsersProfileResponse = LoggedInUserResponse // both have same feilds except token
+type UsersProfileResponse = LoggedInUserResponse // both have same fields except token
 
 func NewUsersProfileResponse(userDto UserDto) UsersProfileResponse {
 
 	user := UserDto{
 		Email:    userDto.Email,
-		Token:    "", // token sent empty intentionlly
+		Token:    "", // token sent empty intentionally
 		Username: userDto.Username,
 		Bio:      userDto.Bio,
 		Image:    userDto.Image,

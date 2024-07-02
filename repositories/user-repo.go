@@ -79,7 +79,7 @@ func (repo *userRepository) CheckIfUserExists(ctx context.Context, user models.U
 		return false, err
 	}
 	if usernameUser.Username == user.Username {
-		return true, nil // Username exitsted
+		return true, nil // Username Exists
 	}
 
 	return false, nil
