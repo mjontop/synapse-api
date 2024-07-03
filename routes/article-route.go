@@ -19,4 +19,9 @@ func SetupArticleRoutes(router *gin.RouterGroup) {
 	{
 		articlesRoutes.GET("/", middleware.AuthMiddleware(), services.HandleGetPaginatedArticles)
 	}
+
+	commentsRoutes := router.Group("/article/:slug/comment")
+	{
+		commentsRoutes.POST("/", middleware.AuthMiddleware(), services.HandleAddComment)
+	}
 }

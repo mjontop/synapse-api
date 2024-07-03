@@ -46,6 +46,9 @@ func DecodeToken(tokenString string) (map[string]string, error) {
 	})
 
 	if err != nil {
+		if errors.Is(err, jwt.ErrSignatureInvalid) {
+			return nil, errors.New("invalid signature")
+		}
 		return nil, errors.New("invalid token")
 	}
 
