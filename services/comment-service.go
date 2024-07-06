@@ -49,9 +49,11 @@ func HandleDeleteComment(c *gin.Context) {
 	commentRepo := repositories.NewCommentRepository()
 	commentId := c.Param("commentId")
 
+	notFoundErr := gin.H{"error": "comment not found"}
+
 	commentObjId, err := primitive.ObjectIDFromHex(commentId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "comment not found"})
+		c.JSON(http.StatusBadRequest, notFoundErr)
 		return
 	}
 
@@ -62,7 +64,7 @@ func HandleDeleteComment(c *gin.Context) {
 	comment, err := commentRepo.GetByID(ctx, commentObjId)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": utils.ErrCommentCreate})
+		c.JSON(http.StatusInternalServerError, notFoundErr)
 		return
 	}
 

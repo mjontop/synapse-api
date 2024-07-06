@@ -37,7 +37,7 @@ func (r *commentRepository) Create(ctx context.Context, comment *models.Comment)
 
 func (r *commentRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Comment, error) {
 	var comment models.Comment
-	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&comment)
+	err := r.collection.FindOne(ctx, bson.M{"_id": id, "isDeleted": false}).Decode(&comment)
 	return &comment, err
 }
 
