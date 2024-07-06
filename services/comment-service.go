@@ -81,3 +81,21 @@ func HandleDeleteComment(c *gin.Context) {
 
 	c.JSON(http.StatusAccepted, gin.H{"message": "Comment deleted successfully"})
 }
+
+func HandleGetCommentsBySlug(c *gin.Context) {
+	commentRepo := repositories.NewCommentRepository()
+	slug := c.Param("slug")
+	ctx := context.Background()
+
+	internalError := gin.H{"error": "internal server error"}
+
+	commentsDto, err := commentRepo.GetAllByArticleSlug(ctx, slug)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, internalError)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"comments": commentsDto})
+	return
+}
