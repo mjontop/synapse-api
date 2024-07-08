@@ -23,5 +23,7 @@ func SetupArticleRoutes(router *gin.RouterGroup) {
 	commentsRoutes := router.Group("/article/:slug/comment")
 	{
 		commentsRoutes.POST("/", middleware.AuthMiddleware(), services.HandleAddComment)
+		commentsRoutes.DELETE("/:commentId", middleware.AuthMiddleware(), services.HandleDeleteComment)
+		commentsRoutes.GET("/", services.HandleGetCommentsBySlug)
 	}
 }

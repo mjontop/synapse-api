@@ -12,6 +12,7 @@ type Comment struct {
 	Body        string             `bson:"body" json:"body"`
 	Author      primitive.ObjectID `bson:"author" json:"author"`
 	ArticleSlug string             `bson:"articleSlug" json:"articleSlug"`
+	IsDeleted   bool               `bson:"isDeleted" json:"-"`
 }
 
 func NewComment(body string, author primitive.ObjectID, articleSlug string) *Comment {

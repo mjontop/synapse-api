@@ -7,6 +7,7 @@ import (
 	"github.com/mjontop/synapse-api/models"
 	"github.com/mjontop/synapse-api/repositories"
 	"github.com/mjontop/synapse-api/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 )
 
@@ -42,4 +43,59 @@ func HandleAddComment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"comment": comment})
+}
+
+func HandleDeleteComment(c *gin.Context) {
+	commentRepo := repositories.NewCommentRepository()
+	commentId := c.Param("commentId")
+
+	notFoundErr := gin.H{"error": "comment not found"}
+
+	commentObjId, err := primitive.ObjectIDFromHex(commentId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, notFoundErr)
+		return
+	}
+
+	ctx := context.Background()
+
+	user := c.MustGet("user").(models.User)
+
+	comment, err := commentRepo.GetByID(ctx, commentObjId)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, notFoundErr)
+		return
+	}
+
+	if comment.Author != user.ID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
+		return
+	}
+
+	err = commentRepo.Delete(ctx, commentObjId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": utils.ErrCommentCreate})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{"message": "Comment deleted successfully"})
+}
+
+func HandleGetCommentsBySlug(c *gin.Context) {
+	commentRepo := repositories.NewCommentRepository()
+	slug := c.Param("slug")
+	ctx := context.Background()
+
+	internalError := gin.H{"error": "internal server error"}
+
+	commentsDto, err := commentRepo.GetAllByArticleSlug(ctx, slug)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, internalError)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"comments": commentsDto})
+	return
 }

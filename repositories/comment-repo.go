@@ -15,7 +15,7 @@ type CommentRepository interface {
 	GetByID(ctx context.Context, id primitive.ObjectID) (*models.Comment, error)
 	GetAllByArticleSlug(ctx context.Context, articleSlug string) ([]*models.Comment, error)
 	Update(ctx context.Context, id primitive.ObjectID, update bson.M) (*mongo.UpdateResult, error)
-	Delete(ctx context.Context, id primitive.ObjectID) (*mongo.DeleteResult, error)
+	Delete(ctx context.Context, id primitive.ObjectID) error
 }
 
 type commentRepository struct {
@@ -37,7 +37,7 @@ func (r *commentRepository) Create(ctx context.Context, comment *models.Comment)
 
 func (r *commentRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Comment, error) {
 	var comment models.Comment
-	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&comment)
+	err := r.collection.FindOne(ctx, bson.M{"_id": id, "isDeleted": false}).Decode(&comment)
 	return &comment, err
 }
 
@@ -69,6 +69,8 @@ func (r *commentRepository) Update(ctx context.Context, id primitive.ObjectID, u
 	return r.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": update})
 }
 
-func (r *commentRepository) Delete(ctx context.Context, id primitive.ObjectID) (*mongo.DeleteResult, error) {
-	return r.collection.DeleteOne(ctx, bson.M{"_id": id})
+func (r *commentRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
+	update := bson.M{"$set": bson.M{"isDeleted": true}}
+	_, err := r.collection.UpdateByID(ctx, id, update)
+	return err
 }
