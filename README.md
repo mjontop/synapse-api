@@ -1,4 +1,4 @@
-# Synapse API
+# Synapse APP API
 
 ## Overview
 
@@ -6,7 +6,7 @@ This is a basic blogging application developed in Go (Golang) for practice and t
 
 ## Features
 
-- Create, Read, Update, Delete (CRUD) blog posts
+- Create, Read, Update, and Delete (CRUD) blog posts
 - User login and profile update
 - Write comments on blog posts
 
